@@ -4,13 +4,9 @@ import java.util.Optional;
 
 public class Card implements Comparable<Card> {
 	
-	private CardColor color;
-	private int number;
+	private final CardColor color;
+	private final int number;
 	private Player player;
-	
-	public Card() {
-		
-	}
 	
 	public Card(CardColor color, int number) {
 		this.color = color;
@@ -21,16 +17,8 @@ public class Card implements Comparable<Card> {
 		return color;
 	}
 
-	public void setColor(CardColor color) {
-		this.color = color;
-	}
-
 	public int getNumber() {
 		return number;
-	}
-
-	public void setNumber(int number) {
-		this.number = number;
 	}
 
 	public Optional<Player> getPlayer() {
@@ -41,15 +29,23 @@ public class Card implements Comparable<Card> {
 		this.player = player;
 	}
 
+	public void setPlayerToEmpty() {
+		setPlayer(null);
+	}
+	
+	public boolean isAvailableToBePickedUp() {
+		return getPlayer().isEmpty();
+	}
+
 	@Override
 	public String toString() {
 		return color.getAnsiColor() + "[" + color + " - " + number + "]" + CardColor.ANSI_RESET;
 	}
 
 	@Override
-	public int compareTo(Card card) {
-		if (this.getColor().equals(card.getColor())) {
-			if (this.getNumber() >= card.getNumber()) {
+	public int compareTo(Card otherCard) {
+		if (this.getColor().equals(otherCard.getColor())) {
+			if (this.getNumber() >= otherCard.getNumber()) {
 				return 1;
 			} else {
 				return -1;

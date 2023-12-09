@@ -9,7 +9,7 @@ public enum CardColor {
 	public final String ansiColor;
 	public static final String ANSI_RESET = "\u001B[0m";
 	
-	private CardColor(String ansiColor) {
+	CardColor(String ansiColor) {
 		this.ansiColor = ansiColor;
 	}
 

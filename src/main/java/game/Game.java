@@ -3,19 +3,117 @@ package game;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class Main {
+public class Game {
+	
+	private final List<Card> deckOfCards;
+	private final List<Card> listPlayedCards;
+	private final Scanner sc;
+	private final List<Player> listPlayers;
+	
+	private static final int MAX_CARD_NUMBER = 9;
+	
+	private static final int MINIMUM_NUMBER_OF_PLAYERS = 2;
+	private static final int MAXIMUM_NUMBER_OF_PLAYERS = 8;
+	
+	private static final int MAXIMUM_OF_INITIAL_CARDS_FOR_A_PLAYER = 5;
+	
+	public Game() {
+		this.sc = new Scanner(System.in);
+		this.listPlayedCards = new ArrayList<>();
+		
+		this.deckOfCards = new ArrayList<>();
+		initializeDeck();
+		
+		this.listPlayers = new ArrayList<>();
+		initializePlayers();
+	}
+	
+	private void initializeDeck() {
+		CardColor[] colors = CardColor.values();
+		
+		for (CardColor color : colors)  {
+			for (int i = 0; i <= MAX_CARD_NUMBER; i++) {
+				Card c = new Card(color, i);
+				deckOfCards.add(c);
+			}
+		}
+		
+		shuffleDeckOfCards();
+	}
+	
+	private void initializePlayers() {
+		int numberOfPlayers = askForNumberOfPlayers();
+		
+		Player player1 = askForPlayerOne();
+		listPlayers.add(player1);
+		
+		for (int i = 1; i < numberOfPlayers; i++) {
+			Player botPlayer = new Player((i + 1), true);
+			listPlayers.add(botPlayer);
+		}
 
-	public static void main(String[] args) {
-		List<Card> deckOfCards = initializeDeck();
-		List<Card> listPlayedCards = new ArrayList<>();
+        for (Player player : listPlayers) {
+            setPlayerCards(player);
+        }
+	}
+	
+	private int askForNumberOfPlayers() {
+		int numberOfPlayers;
 		
-		Scanner sc = new Scanner(System.in);
-		List<Player> listPlayers = initializePlayers(sc, deckOfCards, listPlayedCards);
+		while (true) {
+			System.out.println("How many players do you want? (" + MINIMUM_NUMBER_OF_PLAYERS + " - " + MAXIMUM_NUMBER_OF_PLAYERS + "): ");
+			numberOfPlayers = sc.nextInt();
+			
+			boolean isValidNumberOfPlayers = (numberOfPlayers >= MINIMUM_NUMBER_OF_PLAYERS && numberOfPlayers <= MAXIMUM_NUMBER_OF_PLAYERS);
+			
+			if (!isValidNumberOfPlayers)  {
+				System.out.println("Invalid number of players!");
+			} else {
+				break;
+			}
+		}
 		
+		sc.nextLine(); // Clear buffer
+		
+		return numberOfPlayers;
+	}
+	
+	private Player askForPlayerOne() {
+		Player player1 = null;
+		
+		while (player1 == null) {
+			System.out.println("Would you like to play? Y/N:");
+			String userWillPlayResponse = sc.nextLine();
+			
+			boolean player1WillPlay = userWillPlayResponse.equalsIgnoreCase("Y");
+			boolean player2WillNotPlay = userWillPlayResponse.equalsIgnoreCase("N");
+			
+			boolean isValidResponse = (player1WillPlay || player2WillNotPlay);
+			
+			if (!isValidResponse) {
+				System.out.println("Invalid option!");
+				continue;
+			}
+			
+			player1 = new Player(1, !player1WillPlay);
+		}
+		
+		return player1;
+	}
+	
+	private void setPlayerCards(Player player) {
+		int startIndex = ((player.getId() - 1) * MAXIMUM_OF_INITIAL_CARDS_FOR_A_PLAYER);
+		
+		for (int i = startIndex; i < startIndex + MAXIMUM_OF_INITIAL_CARDS_FOR_A_PLAYER; i++) {
+			Card card = deckOfCards.get(i);
+			player.pickCard(card, listPlayedCards);
+		}
+	}
+	
+	public void start() {
 		boolean gameIsOver = false;
 		
 		while (!gameIsOver) {
@@ -23,10 +121,10 @@ public class Main {
 				System.out.println();
 				System.out.println("Player " + player.getId() + " turn:");
 				
-				if (player.isBotPlayer()) {
-					botPlayerTurn(player, deckOfCards, listPlayedCards);
+				if (player.isHuman()) {
+					player1Turn(player);
 				} else {
-					player1Turn(player, deckOfCards, listPlayedCards, sc);
+					botPlayerTurn(player);
 				}
 				
 				if (player.hasWon()) {
@@ -40,135 +138,73 @@ public class Main {
 		sc.close();
 	}
 	
-	private static List<Card> initializeDeck() {
-		List<Card> deckOfCards = new ArrayList<>();
-		CardColor[] colors = CardColor.values();
+	private void botPlayerTurn(Player player) {
+		Optional<Card> availableCard = player.getPlayerDeck()
+				.stream()
+				.filter(card -> isValidMode(card))
+				.findAny();
 		
-		for (CardColor color : colors)  {
-			for (int i = 0; i <= 9; i++) {
-				Card c = new Card(color, i);
-				
-				deckOfCards.add(c);
-			}
+		if (!availableCard.isEmpty()) {
+			player.playCard(availableCard.orElseThrow(), listPlayedCards);
+			return;
 		}
 		
-		Collections.shuffle(deckOfCards);
-		
-		return deckOfCards;
+		player.playCard(pickRandomCard(player), listPlayedCards);
 	}
 	
-	private static List<Player> initializePlayers(Scanner sc, List<Card> deckOfCards, List<Card> listPlayedCards) {
-		int numberOfPlayers = 0;
-		
-		while (true) {
-			System.out.println("How many players do you want? (2 - 8): ");
-			numberOfPlayers = sc.nextInt();
-			
-			if (numberOfPlayers < 2 || numberOfPlayers > 8) {
-				System.out.println("Invalid number of players!");
-			} else {
-				break;
-			}
-		}
-		
-		List<Player> listPlayers = new ArrayList<>();
-		Player player1 = null;
-		
-		sc.nextLine(); // Clear buffer
-		
-		while (player1 == null) {
-			System.out.println("Would you like to play? Y/N:");
-			String userWillPlay = sc.nextLine();
-			
-			if (userWillPlay.equals("Y")) {
-				player1 = new Player(1, false);
-			} else if (userWillPlay.equals("N")) {
-				player1 = new Player(1, true);
-			} else {
-				System.out.println("Invalid option!");
-			}
-		}
-		
-		listPlayers.add(player1);
-		
-		for (int i = 1; i < numberOfPlayers; i++) {
-			Player botPlayer = new Player((i + 1), true);
-			listPlayers.add(botPlayer);
-		}
-		
-		for (int i = 0; i < listPlayers.size(); i++) {
-			Player player = listPlayers.get(i);
-			setPlayerCards(player, deckOfCards, listPlayedCards);
-		}
-		
-		return listPlayers;
-	}
-	
-	private static void setPlayerCards(Player player, List<Card> deckOfCards, List<Card> listPlayedCards) {
-		int startIndex = ((player.getId() - 1) * 5);
-		
-		for (int i = startIndex; i < startIndex + 5; i++) {
-			Card card = deckOfCards.get(i);
-			player.pickCard(card, listPlayedCards);
-		}
-	}
-	
-	private static void player1Turn(Player player, List<Card> deckOfCards, List<Card> listPlayedCards, Scanner sc) {
-		Stream<Card> streamAvailableCards = player.getPlayerDeck().stream().filter((c) -> isValidMode(c, listPlayedCards));
-		
-		if (streamAvailableCards.findAny().isEmpty()) {
-			System.out.println("No possible options!");
-			pickRandomCard(player, deckOfCards, listPlayedCards);
-		}
+	private void player1Turn(Player player) {
+		pickPlayer1CardIfNoOptionsAvailable(player);
+		showPlayer1CurrentCards(player);
 
-		List<Card> listAvailableCards = player.getPlayerDeck().stream().filter((c) -> isValidMode(c, listPlayedCards)).collect(Collectors.toList());
-		streamAvailableCards.close();
+		List<Card> listAvailableCardsToBePlayed = player.getPlayerDeck()
+				.stream()
+				.filter(card -> isValidMode(card))
+				.toList();
 		
-		System.out.println("Your current cards are: ");
+		showPlayer1AvailableCardOptions(listAvailableCardsToBePlayed);
 		
-		for (int i = 0; i < player.getPlayerDeck().size(); i++) {
-			System.out.print(player.getPlayerDeck().get(i) + ", ");
+		System.out.println("\nChoose your next move: ");
+		int selectedCardIndex = sc.nextInt() - 1;
+		
+		boolean cardIndexExists = (selectedCardIndex >= 0 && selectedCardIndex < listAvailableCardsToBePlayed.size());
+		
+		if (cardIndexExists) {
+			Card selectedCard = listAvailableCardsToBePlayed.get(selectedCardIndex);
+			player.playCard(selectedCard, listPlayedCards);
 		}
+	}
+	
+	private void pickPlayer1CardIfNoOptionsAvailable(Player player) {
+		boolean playerCanPlayAnyCard = player.getPlayerDeck()
+				.stream()
+				.anyMatch(card -> isValidMode(card));
 		
+		if (!playerCanPlayAnyCard) {
+			System.out.println("No possible options!");
+			pickRandomCard(player);
+		}
+	}
+	
+	private void showPlayer1CurrentCards(Player player) {
+		System.out.println("\nYour current cards are: ");
+		
+		player.getPlayerDeck().forEach(availableCard ->  {
+			System.out.print(availableCard + ", ");
+		});
+	}
+	
+	private void showPlayer1AvailableCardOptions(List<Card> listAvailableCardsToBePlayed) {
 		System.out.println("\nYour possible options are: ");
 		
-		List<Integer> listAvailableCardNumbers = new ArrayList<>();
-		
-		for (int i = 0; i < listAvailableCards.size(); i++) {
-			listAvailableCardNumbers.add(i);
-			System.out.print((i + 1) + ": " + listAvailableCards.get(i) + ", ");
+		for (int i = 0; i < listAvailableCardsToBePlayed.size(); i++) {
+			Card availableCard = listAvailableCardsToBePlayed.get(i);
+			System.out.print((i + 1) + ": " + availableCard + ", ");
 		}
 		
 		System.out.print("Other: don't play card");
-		
-		System.out.println("\nChoose your next move: ");
-		int cardIndex = sc.nextInt() - 1;
-		
-		if (listAvailableCardNumbers.contains(cardIndex)) {
-			playCardIfAvailable(player, listAvailableCards.get(cardIndex), listPlayedCards);
-		} else {
-			playCardIfAvailable(player, null, listPlayedCards);
-		}
 	}
 	
-	private static void botPlayerTurn(Player player, List<Card> deckOfCards, List<Card> listPlayedCards) {
-		boolean playedCard = false;
-		
-		for (Card card : player.getPlayerDeck()) {
-			if (isValidMode(card, listPlayedCards)) {
-				playCardIfAvailable(player, card, listPlayedCards);
-				playedCard = true;
-				break;
-			}
-		}
-		
-		if (!playedCard) {
-			Card card = pickRandomCard(player, deckOfCards, listPlayedCards);
-			playCardIfAvailable(player, card, listPlayedCards);
-		}
-	}
-	
-	private static boolean isValidMode(Card card, List<Card> listPlayedCards) {
+	private boolean isValidMode(Card card) {
 		if (listPlayedCards.isEmpty()) {
 			return true;
 		}
@@ -179,17 +215,21 @@ public class Main {
 				(card.getColor().equals(lastPlayedCard.getColor()) || card.getNumber() == lastPlayedCard.getNumber()));
 	}
 	
-	private static Card pickRandomCard(Player player, List<Card> deckOfCards, List<Card> listPlayedCards) {
-		//listPlayedCards.clear();
-		Collections.shuffle(deckOfCards);
-		List<Card> listAvailableCards = deckOfCards.stream().filter((c) -> c.getPlayer().isEmpty()).collect(Collectors.toList());
+	private Card pickRandomCard(Player player) {
+		shuffleDeckOfCards();
 		
+		List<Card> listAvailableCards = deckOfCards
+				.stream()
+				.filter(card -> card.isAvailableToBePickedUp())
+				.toList();
+		
+		// Keep picking up cards until one can be played
 		for (Card card : listAvailableCards) {
 			player.pickCard(card, listPlayedCards);
 			
 			System.out.println("Player " + player.getId() + " picked card " + card);
 			
-			if (isValidMode(card, listPlayedCards)) {
+			if (isValidMode(card)) {
 				return card;
 			}
 		}
@@ -197,13 +237,8 @@ public class Main {
 		return null;
 	}
 	
-	private static void playCardIfAvailable(Player player, Card card, List<Card> listPlayedCards) {
-		if (card == null) {
-			return;
-		}
-		
-		System.out.println("Player " + player.getId() + " played card " + card);
-		player.playCard(card, listPlayedCards);
+	private void shuffleDeckOfCards() {
+		Collections.shuffle(deckOfCards);
 	}
 
 }

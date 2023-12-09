@@ -6,9 +6,9 @@ import java.util.List;
 
 public class Player {
 
-	private int id;
-	private List<Card> playerDeck;
-	private boolean isBotPlayer;
+	private final int id;
+	private final List<Card> playerDeck;
+	private final boolean isBotPlayer;
 
 	public Player(int id, boolean isBotPlayer) {
 		this.id = id;
@@ -16,32 +16,20 @@ public class Player {
 		this.isBotPlayer = isBotPlayer;
 	}
 
-	public Player(List<Card> playerDeck) {
-		this.playerDeck = playerDeck;
-	}
-
 	public int getId() {
 		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
 	}
 
 	public List<Card> getPlayerDeck() {
 		return playerDeck;
 	}
-
-	public void setPlayerDeck(List<Card> playerDeck) {
-		this.playerDeck = playerDeck;
-	}
 	
 	public boolean isBotPlayer() {
 		return isBotPlayer;
 	}
-
-	public void setBotPlayer(boolean isBotPlayer) {
-		this.isBotPlayer = isBotPlayer;
+	
+	public boolean isHuman() {
+		return !isBotPlayer;
 	}
 
 	public void pickCard(Card card, List<Card> listPlayedCards) {
@@ -50,33 +38,51 @@ public class Player {
 		}
 		
 		listPlayedCards.remove(card);
-		card.setPlayer(this);
-		this.playerDeck.add(0, card);
-		Collections.sort(this.playerDeck);
+		addCardToDeck(card);
+
+		sortDeck();
+	}
+	
+	private void addCardToDeck(Card pickedCard) {
+		pickedCard.setPlayer(this);
+		playerDeck.addFirst(pickedCard);
 	}
 	
 	public void playCard(Card card, List<Card> listPlayedCards) {
+		if (card == null) {
+			return;
+		}
+		
 		if (!this.equals(card.getPlayer().orElseThrow())) {
 			return;
 		}
-
-		listPlayedCards.add(0, card);
-		card.setPlayer(null);
-		this.playerDeck.remove(card);
-		Collections.sort(this.playerDeck);
 		
-		if (this.playerDeck.size() == 1) {
+		System.out.println("Player " + getId() + " played card " + card);
+		
+		listPlayedCards.addFirst(card);
+		removeCardFromPlayerDeck(card);
+		sortDeck();
+		
+		if (hasUNO()) {
 			System.out.println("Player " + this.getId() + " has a UNO!");
 		}
 	}
 
-	public boolean hasWon() {
-		return this.getPlayerDeck().isEmpty();
-	}
-
-	@Override
-	public String toString() {
-		return "Player [id=" + id + ", isBotPlayer=" + isBotPlayer + "]";
+	private void sortDeck() {
+		Collections.sort(playerDeck);
 	}
 	
+	private void removeCardFromPlayerDeck(Card playedCard) {
+		playedCard.setPlayerToEmpty();
+		playerDeck.remove(playedCard);
+	}
+
+	private boolean hasUNO() {
+		return playerDeck.size() == 1;
+	}
+
+	public boolean hasWon() {
+		return playerDeck.isEmpty();
+	}
+
 }
