@@ -3,56 +3,56 @@ package game;
 import java.util.Optional;
 
 public class Card implements Comparable<Card> {
-	
-	private final CardColor color;
-	private final int number;
-	private Player player;
-	
-	public Card(CardColor color, int number) {
-		this.color = color;
-		this.number = number;
-	}
 
-	public CardColor getColor() {
-		return color;
-	}
+    private final CardColor color;
+    private final int number;
+    private Player player;
 
-	public int getNumber() {
-		return number;
-	}
+    public Card(CardColor color, int number) {
+        this.color = color;
+        this.number = number;
+    }
 
-	public Optional<Player> getPlayer() {
-		return Optional.ofNullable(this.player);
-	}
+    public CardColor getColor() {
+        return color;
+    }
 
-	public void setPlayer(Player player) {
-		this.player = player;
-	}
+    public int getNumber() {
+        return number;
+    }
 
-	public void setPlayerToEmpty() {
-		setPlayer(null);
-	}
-	
-	public boolean isAvailableToBePickedUp() {
-		return getPlayer().isEmpty();
-	}
+    public Optional<Player> getPlayer() {
+        return Optional.ofNullable(this.player);
+    }
 
-	@Override
-	public String toString() {
-		return color.getAnsiColor() + "[" + color + " - " + number + "]" + CardColor.ANSI_RESET;
-	}
+    public void setPlayer(Player player) {
+        this.player = player;
+    }
 
-	@Override
-	public int compareTo(Card otherCard) {
-		if (this.getColor().equals(otherCard.getColor())) {
-			if (this.getNumber() >= otherCard.getNumber()) {
-				return 1;
-			} else {
-				return -1;
-			}
-		}
-		
-		return 0;
-	}
-	
+    public void setPlayerToEmpty() {
+        setPlayer(null);
+    }
+
+    public boolean isAvailableToBePickedUp() {
+        return getPlayer().isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        return color.getAnsiColor() + "[" + color + " - " + number + "]" + CardColor.ANSI_RESET;
+    }
+
+    @Override
+    public int compareTo(Card otherCard) {
+        if (this.getColor().equals(otherCard.getColor())) {
+            if (this.getNumber() >= otherCard.getNumber()) {
+                return 1;
+            } else {
+                return -1;
+            }
+        }
+
+        return 0;
+    }
+
 }
