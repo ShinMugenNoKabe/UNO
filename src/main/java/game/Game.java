@@ -13,8 +13,6 @@ public class Game {
     private final Scanner sc;
     private final List<Player> listPlayers;
 
-    private static final int MAX_CARD_NUMBER = 9;
-
     private static final int MINIMUM_NUMBER_OF_PLAYERS = 2;
     private static final int MAXIMUM_NUMBER_OF_PLAYERS = 8;
 
@@ -35,7 +33,7 @@ public class Game {
         CardColor[] colors = CardColor.values();
 
         for (CardColor color : colors) {
-            for (int i = 0; i <= MAX_CARD_NUMBER; i++) {
+            for (int i = 0; i <= Card.MAX_CARD_NUMBER; i++) {
                 Card c = new Card(color, i);
                 deckOfCards.add(c);
             }
@@ -141,10 +139,10 @@ public class Game {
     private void botPlayerTurn(Player player) {
         Optional<Card> availableCard = player.getPlayerDeck()
                 .stream()
-                .filter(card -> isValidMode(card))
+                .filter(this::isValidMode)
                 .findAny();
 
-        if (!availableCard.isEmpty()) {
+        if (availableCard.isPresent()) {
             player.playCard(availableCard.orElseThrow(), listPlayedCards);
             return;
         }
@@ -158,7 +156,7 @@ public class Game {
 
         List<Card> listAvailableCardsToBePlayed = player.getPlayerDeck()
                 .stream()
-                .filter(card -> isValidMode(card))
+                .filter(this::isValidMode)
                 .toList();
 
         showPlayer1AvailableCardOptions(listAvailableCardsToBePlayed);
@@ -177,7 +175,7 @@ public class Game {
     private void pickPlayer1CardIfNoOptionsAvailable(Player player) {
         boolean playerCanPlayAnyCard = player.getPlayerDeck()
                 .stream()
-                .anyMatch(card -> isValidMode(card));
+                .anyMatch(this::isValidMode);
 
         if (!playerCanPlayAnyCard) {
             System.out.println("No possible options!");
@@ -188,9 +186,9 @@ public class Game {
     private void showPlayer1CurrentCards(Player player) {
         System.out.println("\nYour current cards are: ");
 
-        player.getPlayerDeck().forEach(availableCard -> {
+        for (Card availableCard : player.getPlayerDeck()) {
             System.out.print(availableCard + ", ");
-        });
+        }
     }
 
     private void showPlayer1AvailableCardOptions(List<Card> listAvailableCardsToBePlayed) {
@@ -209,9 +207,9 @@ public class Game {
             return true;
         }
 
-        Card lastPlayedCard = listPlayedCards.get(0);
+        Card lastPlayedCard = listPlayedCards.getFirst();
 
-        return (card.getPlayer().isPresent() &&
+        return (card.isInAPlayerDeck() &&
                 (card.getColor().equals(lastPlayedCard.getColor()) || card.getNumber() == lastPlayedCard.getNumber()));
     }
 
@@ -220,7 +218,7 @@ public class Game {
 
         List<Card> listAvailableCards = deckOfCards
                 .stream()
-                .filter(card -> card.isAvailableToBePickedUp())
+                .filter(Card::isAvailableToBePickedUp)
                 .toList();
 
         // Keep picking up cards until one can be played

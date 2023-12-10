@@ -8,6 +8,8 @@ public class Card implements Comparable<Card> {
     private final int number;
     private Player player;
 
+    protected static final int MAX_CARD_NUMBER = 9;
+
     public Card(CardColor color, int number) {
         this.color = color;
         this.number = number;
@@ -23,6 +25,10 @@ public class Card implements Comparable<Card> {
 
     public Optional<Player> getPlayer() {
         return Optional.ofNullable(this.player);
+    }
+
+    public boolean isInAPlayerDeck() {
+        return getPlayer().isPresent();
     }
 
     public void setPlayer(Player player) {
